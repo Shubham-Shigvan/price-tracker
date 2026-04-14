@@ -216,9 +216,9 @@ def main():
             "sku", "platform", "url", "error", "timestamp"
         ])
 
-latest_df.to_csv(LATEST_FILE, index=False)
-append_csv(HISTORY_FILE, history_df, keep_days=60)
-append_csv(ERROR_FILE, error_df, keep_days=60)
+    latest_df.to_csv(LATEST_FILE, index=False)
+    append_csv(HISTORY_FILE, history_df, keep_days=60)
+    append_csv(ERROR_FILE, error_df, keep_days=60)
 
     print("Done.")
     print(f"Created: {LATEST_FILE}")
