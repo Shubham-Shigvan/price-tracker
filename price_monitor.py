@@ -7,7 +7,7 @@ from datetime import datetime
 import pandas as pd
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
-INPUT_FILE = "price_input.csv"
+INPUT_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTCB90G6TS6YWsg7Q80l_Viki8B2JldYXyIH-5RS9VZ9t_H7m-Ns-aiz8dn6uzNlmU8EWl9ewSFwOXm/pub?gid=1627290347&single=true&output=csv"
 LATEST_FILE = "latest_prices.csv"
 HISTORY_FILE = "price_history.csv"
 ERROR_FILE = "error_log.csv"
@@ -134,10 +134,9 @@ def append_csv(file_path, df, keep_days=None):
 
 
 def main():
-    if not os.path.exists(INPUT_FILE):
-        raise FileNotFoundError(f"Input file not found: {INPUT_FILE}")
 
-    input_df = pd.read_csv(INPUT_FILE)
+
+    input_df = pd.read_csv(INPUT_SHEET_URL)
 
     required_cols = {"sku", "platform", "url", "active"}
     missing = required_cols - set(input_df.columns)
