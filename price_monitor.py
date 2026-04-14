@@ -114,7 +114,7 @@ def scrape_platform(page, platform, url):
     raise ValueError(f"Unsupported platform: {platform}")
 
 
-def append_csv(file_path, df):
+def append_csv(file_path, df, keep_days=None):
     if df.empty:
         return
 
@@ -123,6 +123,12 @@ def append_csv(file_path, df):
         combined = pd.concat([old_df, df], ignore_index=True)
     else:
         combined = df.copy()
+
+    if keep_days is not None and "timestamp" in combined.columns:
+        combined["timestamp"] = pd.to_datetime(combined["timestamp"], errors="coerce")
+        cutoff_date = pd.Timestamp.now() - pd.Timedelta(days=keep_days)
+        combined = combined[combined["timestamp"] >= cutoff_date]
+        combined = combined.sort_values("timestamp")
 
     combined.to_csv(file_path, index=False)
 
@@ -211,9 +217,9 @@ def main():
             "sku", "platform", "url", "error", "timestamp"
         ])
 
-    latest_df.to_csv(LATEST_FILE, index=False)
-    append_csv(HISTORY_FILE, history_df)
-    append_csv(ERROR_FILE, error_df)
+latest_df.to_csv(LATEST_FILE, index=False)
+append_csv(HISTORY_FILE, history_df, keep_days=60)
+append_csv(ERROR_FILE, error_df, keep_days=60)
 
     print("Done.")
     print(f"Created: {LATEST_FILE}")
