@@ -125,7 +125,10 @@ def scrape_flipkart(page, url):
         except Exception:
             pass
 
-    return live_price, mrpdef scrape_nykaa(page, url):
+        return live_price, mrp
+
+
+def scrape_nykaa(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS)
     time.sleep(WAIT_AFTER_LOAD_SEC)
 
