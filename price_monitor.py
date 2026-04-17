@@ -81,38 +81,51 @@ def scrape_flipkart(page, url):
 
     time.sleep(5)
 
-    possible_price_selectors = [
-        "div.Nx9bqj.CxhGGd",
-        "div._30jeq3",
-        "div[class*='Nx9bqj']",
-    ]
-
-    for selector in possible_price_selectors:
-        try:
-            page.locator(selector).first.wait_for(state="visible", timeout=10000)
-            break
-        except Exception:
-            continue
-
     live_price_text = safe_inner_text(page, [
         "div.Nx9bqj.CxhGGd",
         "div._30jeq3",
         "div[class*='Nx9bqj']",
+        "div[class*='_30jeq3']",
     ], timeout=5000)
 
     mrp_text = safe_inner_text(page, [
         "div.yRaY8j.A6+E6v",
         "div._3I9_wc",
         "div[class*='yRaY8j']",
+        "div[class*='_3I9_wc']",
     ], timeout=5000)
 
     live_price = clean_price(live_price_text)
     mrp = clean_price(mrp_text)
 
-    return live_price, mrp
+    if live_price is None:
+        try:
+            body_text = page.locator("body").inner_text(timeout=7000)
+            matches = re.findall(r"₹\s?([\d,]+(?:\.\d{1,2})?)", body_text)
 
+            prices = []
+            for match in matches:
+                value = clean_price(match)
+                if value is not None:
+                    prices.append(value)
 
-def scrape_nykaa(page, url):
+            prices = sorted(set(prices))
+
+            # Avoid tiny unit prices like /20g, /100g style values
+            prices = [p for p in prices if p >= 50]
+
+            if len(prices) == 1:
+                live_price = prices[0]
+            elif len(prices) >= 2:
+                mrp = max(prices)
+                candidates = [p for p in prices if p < mrp]
+                if candidates:
+                    live_price = max(candidates)
+
+        except Exception:
+            pass
+
+    return live_price, mrpdef scrape_nykaa(page, url):
     page.goto(url, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS)
     time.sleep(WAIT_AFTER_LOAD_SEC)
 
