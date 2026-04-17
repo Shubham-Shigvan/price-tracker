@@ -13,7 +13,7 @@ HISTORY_FILE = "price_history.csv"
 ERROR_FILE = "error_log.csv"
 
 HEADLESS = True
-PAGE_TIMEOUT_MS = 45000
+PAGE_TIMEOUT_MS = 60000
 WAIT_AFTER_LOAD_SEC = 3
 
 
@@ -31,7 +31,17 @@ def calc_discount(mrp, live_price):
     return round(((mrp - live_price) / mrp) * 100, 2)
 
 
-def safe_inner_text(page, selectors, timeout=3000):
+def safe_inner_text(page, selectors, timeout=5000):
+    for selector in selectors:
+        try:
+            locator = page.locator(selector).first
+            locator.wait_for(state="visible", timeout=timeout)
+            value = locator.inner_text(timeout=timeout).strip()
+            if value:
+                return value
+        except Exception:
+            continue
+    return None
     for selector in selectors:
         try:
             locator = page.locator(selector).first
@@ -64,22 +74,42 @@ def scrape_amazon(page, url):
 
 
 def scrape_flipkart(page, url):
-    page.goto(url, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS)
-    time.sleep(WAIT_AFTER_LOAD_SEC)
+    try:
+        page.goto(url, wait_until="domcontentloaded", timeout=PAGE_TIMEOUT_MS)
+    except Exception:
+        pass
+
+    time.sleep(5)
+
+    possible_price_selectors = [
+        "div.Nx9bqj.CxhGGd",
+        "div._30jeq3",
+        "div[class*='Nx9bqj']",
+    ]
+
+    for selector in possible_price_selectors:
+        try:
+            page.locator(selector).first.wait_for(state="visible", timeout=10000)
+            break
+        except Exception:
+            continue
 
     live_price_text = safe_inner_text(page, [
         "div.Nx9bqj.CxhGGd",
         "div._30jeq3",
         "div[class*='Nx9bqj']",
-    ])
+    ], timeout=5000)
 
     mrp_text = safe_inner_text(page, [
         "div.yRaY8j.A6+E6v",
         "div._3I9_wc",
         "div[class*='yRaY8j']",
-    ])
+    ], timeout=5000)
 
-    return clean_price(live_price_text), clean_price(mrp_text)
+    live_price = clean_price(live_price_text)
+    mrp = clean_price(mrp_text)
+
+    return live_price, mrp
 
 
 def scrape_nykaa(page, url):
